@@ -1,0 +1,84 @@
+
+actions:
+  1:
+    action: delete_indices
+    description: >-
+    options:
+      timeout_override: 300
+      continue_if_exception: True
+      ignore_empty_list: True
+      disable_action: False
+    filters:
+      - filtertype: pattern
+        kind: regex
+        value: filebeat-*
+        exclude:
+      - filtertype: age
+        source: name
+        direction: older
+        timestring: '%Y.%m.%d'
+        unit: days
+        unit_count: 15
+  2:
+    action: delete_indices
+    description: >-
+    options:
+      timeout_override: 300
+      continue_if_exception: True
+      ignore_empty_list: True
+      disable_action: False
+    filters:
+      - filtertype: pattern
+        kind: regex
+        value: auditbeat-*
+        exclude:
+      - filtertype: age
+        source: name
+        direction: older
+        timestring: '%Y.%m.%d'
+        unit: days
+        unit_count: 15
+
+### FIREWALL
+## Tráfego
+  3:
+    action: delete_indices
+    description: >-
+    options:
+      timeout_override: 300
+      continue_if_exception: True
+      ignore_empty_list: True
+      disable_action: False
+    filters:
+      - filtertype: pattern
+        kind: regex
+        value: palo-traffic-*
+        exclude:
+      - filtertype: age
+        source: name
+        direction: older
+        timestring: '%Y.%m.%d'
+        unit: days
+        unit_count: 1
+
+
+## Ameaças
+  4:
+    action: delete_indices
+    description: >-
+    options:
+      timeout_override: 300
+      continue_if_exception: True
+      ignore_empty_list: True
+      disable_action: False
+    filters:
+      - filtertype: pattern
+        kind: regex
+        value: palo-threat-*
+        exclude:
+      - filtertype: age
+        source: name
+        direction: older
+        timestring: '%Y.%m.%d'
+        unit: days
+        unit_count: 10
