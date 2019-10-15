@@ -1,0 +1,19 @@
+client:
+  hosts: localhost
+  port: 9200
+  url_prefix:
+  use_ssl: False
+  certificate:
+  client_cert:
+  client_key:
+  ssl_no_validate: False
+  master_only: False
+  http_auth:
+  timeout: 30
+
+
+logging:
+  loglevel: INFO
+  logfile:
+  logformat: default
+  blacklist: ['elasticsearch', 'urllib3']
