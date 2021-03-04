@@ -1,0 +1,34 @@
+filebeat.inputs:
+- type: log
+  enabled: true
+
+  paths:
+    - /data/files/dc_hc_des/servers/*/log/*.log
+
+tags: ["chibum-d","java","desenvolvimento"]
+
+
+setup.template.settings:
+  index.number_of_shards: 6
+  index.number_of_replicas: 1
+
+setup.kibana:
+  host: "kibana.cjf.k8s:80"
+
+output.elasticsearch:
+  hosts: ["elastic.cjf.k8s:80"]
+  protocol: "http"
+  index: "app-des-java-%{+yyyy.MM.dd}"
+
+setup.template:
+  name: 'app-des-java-'
+  pattern: 'app-des-java-*'
+  enabled: false
+
+processors:
+- decode_json_fields:
+    fields: ["log"]
+    target: ""
+    overwrite_keys: true
+
+setup.ilm.enabled: false
