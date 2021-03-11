@@ -1,0 +1,29 @@
+---
+- name: Install beat
+  hosts: jbosseap
+  become: true
+  tasks:
+    - name: copy audit
+      copy:
+        src: /root/elk/auditbeat-7.11.2-x86_64.rpm
+        dest: /root/
+
+    - name: install filebeat
+      yum:
+        name: /root/auditbeat-7.11.2-x86_64.rpm
+        state: present
+
+    - name: copy configuration file
+      copy:
+        src: auditbeat.yml
+        dest: /etc/auditbeat/auditbeat.yml
+        force: yes
+        backup: yes
+
+    - name: Enable service
+      systemd:
+        name: auditbeat
+        state: started
+        enabled: true
+
+
