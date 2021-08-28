@@ -1,0 +1,101 @@
+cat > /etc/hosts << EOF
+127.0.0.1 localhost
+172.20.64.136 es-master-1
+172.20.64.137 es-data-2
+172.20.64.138 kibana
+172.20.64.135 logstash
+EOF
+
+
+cat > /etc/elasticsearch/elasticsearch.yml << EOF
+cluster.name: elk-siem
+node.name: \${HOSTNAME}
+node.master: true
+node.data: true
+path.logs: /var/log/elasticsearch
+bootstrap.memory_lock: true
+network.host: 0.0.0.0
+discovery.zen.minimum_master_nodes: 2
+discovery.zen.ping.unicast.hosts: ["es-master-1", "es-master-2", "es-master-3"]
+EOF
+
+
+cat > /etc/default/elasticsearch << EOF
+ES_STARTUP_SLEEP_TIME=5
+MAX_OPEN_FILES=65536
+MAX_LOCKED_MEMORY=unlimited
+EOF
+
+
+vim /usr/lib/systemd/system/elasticsearch.service
+
+[Service]
+LimitMEMLOCK=infinity
+LimitNOFILE=65535
+LimitNPROC=4096
+
+
+cat > /etc/security/limits.conf << EOF
+elasticsearch soft memlock unlimited
+elasticsearch hard memlock unlimited
+EOF
+
+
+sysctl -w vm.max_map_count=262144
+
+systemctl daemon-reload
+systemctl enable elasticsearch
+systemctl restart elasticsearch
+
+-------Security 
+
+#!/bin/bash
+
+echo "Criando diretorio para certificados..."
+mkdir -pv /etc/elasticsearch/certs/
+echo " "
+echo "Criando certificados..."
+/usr/share/elasticsearch/bin/elasticsearch-certutil cert --name elk-siem --out /etc/elasticsearch/certs/elk-siem
+
+echo "Configurando permissao..."
+chmod 640 /etc/elasticsearch/certs/elk-siem
+
+echo "Copiando certificado para paracatu02..."
+ssh paracatu02 "mkdir -p /etc/elasticsearch/certs/"
+scp  /etc/elasticsearch/certs/elk-siem paracatu02:/etc/elasticsearch/certs/
+ssh paracatu02 "chmod 640  /etc/elasticsearch/certs/elk-siem"
+
+cat > /etc/elasticsearch/elasticsearch.yml  << EOF
+# ---- Security -----
+xpack.security.enabled: true
+xpack.security.transport.ssl.enabled: true
+xpack.security.transport.ssl.verification_mode: certificate
+xpack.security.transport.ssl.keystore.path: certs/elk-siem
+xpack.security.transport.ssl.truststore.path: certs/elk-siem 
+EOF
+
+systemctl enable elasticsearch
+systemctl restart elasticsearch 
+
+--------Elastic password
+
+/usr/share/elasticsearch/bin/elasticsearch-setup-passwords interactive
+
+User: elastic
+Password: elastic@-siem@master
+
+
+[root@paracatu01 elasticsearch]# curl http://172.20.64.136:9200/_cat/nodes?v -u elastic
+Enter host password for user 'elastic':
+ip            heap.percent ram.percent cpu load_1m load_5m load_15m node.role   master name
+172.20.64.137           38          42   2    0.14    0.14     0.12 cdfhilrstw  -      es-data-1
+172.20.64.136           60          42   2    0.00    0.12     0.14 cdfhilmrstw *      es-master-1
+
+
+-------------Logstash 
+
+cat > /etc/security/limits.conf << EOF
+logstash soft memlock unlimited
+logstash hard memlock unlimited
+EOF
+
